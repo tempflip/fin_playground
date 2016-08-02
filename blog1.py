@@ -46,40 +46,17 @@ class Linear_Model(Model):
         Model.__init__(self)
         pass
 
-    def train(self, training_x_matrix, training_y_matrix, degree=1):
-        self.degree = degree
+    def train(self, training_x_matrix, training_y_matrix):
         # creating a 1...n space len of the training matrix
         my_space = training_x_matrix.reshape(-1,1)
-        poly = PolynomialFeatures(degree=self.degree)
-        # polynominal features of the space
-        my_space_features = poly.fit_transform(my_space) 
 
         # training the model
         regr = linear_model.LinearRegression()
-        regr.fit(my_space_features, training_y_matrix)
+        regr.fit(my_space, training_y_matrix)
         self.model = regr
 
-        self.description = "i'm a linear model of {} degree".format(self.degree)
-
     def predict(self, x):
-        ## as it is trained on polynominal features, we need to transform x
-        poly = PolynomialFeatures(degree=self.degree)
-        polynominal_features = poly.fit_transform(x)
-        return self.model.predict(polynominal_features)[0]
-
-class Compined_Linear_Models(Model):
-    def __init__(self):
-        Model.__init__(self)
-        self.model_list = []
-
-    def addModel(self, model):
-        self.model_list.append(model)
-
-    def predict(self, x):
-        p = 0
-        for model in self.model_list:
-            p += model.predict(x)
-        return p / len(self.model_list)
+        return self.model.predict(x)
 
 # loading
 boston = load_boston()
@@ -96,19 +73,12 @@ norm = norm / norm.max()
 cols = ['CRIM']
 
 predictions = pd.DataFrame()
-combined = Compined_Linear_Models()
 
 for col in cols:
     regr = Linear_Model()
-    regr.train(norm[col], norm['MEDV'], degree=5)
-    combined.addModel(regr)
+    regr.train(norm[col], norm['MEDV'])
     predictions[col] = [regr.predict(x) for x in norm[col].values]
     print "MSE for {}: {}".format(col, mean_squared_error(norm['MEDV'], predictions[col]))
-
-predictions['COMB'] = [combined.predict(x) for x in norm['B'].values]
-
-print "MSE for COMP: {}".format(mean_squared_error(norm['MEDV'], predictions['COMB']))
-
 
 #print mean_squared_error(norm['MEDV'], predict)
 
@@ -116,7 +86,6 @@ print "MSE for COMP: {}".format(mean_squared_error(norm['MEDV'], predictions['CO
 ax = None
 for col in cols:
     ax = norm.plot(kind='scatter', x = col, y='MEDV', ax = ax)
-    plt.plot(norm[col], predictions[col].values, '.')
-    #plt.plot(norm['B'], predictions['COMB'].values, 'go')
+    plt.plot(norm[col], predictions[col].values, 'r.')
 
 plt.show()
