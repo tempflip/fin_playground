@@ -58,7 +58,7 @@ class Linear_Model(Model):
         my_space_features = poly.fit_transform(my_space) 
 
         # training the model
-        regr = linear_model.LinearRegression()
+        regr = linear_model.Ø()
         regr.fit(my_space_features, training_y_matrix)
         self.model = regr
 
