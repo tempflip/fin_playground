@@ -2,6 +2,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
+### bla blak
+
 def read_stock(stock, usecols = ['Date', 'Adj Close']):
 	df = pd.read_csv('{}.csv'.format(stock), index_col='Date',
 			parse_dates=True,
