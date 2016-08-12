@@ -26,6 +26,9 @@ from sklearn.preprocessing import PolynomialFeatures
 from sklearn.datasets import load_boston
 from sklearn.metrics import mean_squared_error
 
+
+
+
 class Model:
     def __init__(self):
         self.model = None
@@ -81,6 +84,8 @@ for col in cols:
     print "MSE for {}: {}".format(col, mean_squared_error(norm['MEDV'], predictions[col]))
 
 #print mean_squared_error(norm['MEDV'], predict)
+
+print 'x'
 
 #plot
 ax = None
