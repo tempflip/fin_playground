@@ -36,7 +36,8 @@ print y_train.shape
 print X_test.shape
 print y_test.shape
 
-#exit()
+print X_train[7] 
+
 
 #'''
 

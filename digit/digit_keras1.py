@@ -36,22 +36,11 @@ def baseline_model():
 
 
 FILE_NAME = '_digit_rec.csv'
-
-set_size = 4000
-train_size = 2000
-
+train_size = 30000
 df = pd.read_csv(FILE_NAME)
 
 labels =  df.values[:,0:1]
-data = df.values[:, 1:]
-
-
-'''df2 = pd.DataFrame()
-df2['label'] = df['label'][:set_size]
-df2['img'] = pd.Series(np.asarray(df.values[1:])[:set_size])
-df2['img'] = df2['img'] / 256
-'''
-
+data = df.values[:, 1:].astype('float32')
 
 
 num_pixels = 28 * 28
@@ -61,12 +50,6 @@ y_train = labels[:train_size]
 
 X_test = data[train_size:] / 256
 y_test = labels[train_size:]
-
-#X_train = df2['img'][:train_size].values
-#y_train = df2['label'][:train_size].values
-
-#X_test = df2['img'][train_size:].values
-#y_test = df2['label'][train_size:].values
 
 
 
@@ -82,6 +65,9 @@ print 'y train shape ', y_train.shape
 
 print 'x test shape ', X_test.shape
 print 'y test shape', y_test.shape
+
+print X_train[6] 
+c#exit()
 
 
 model = baseline_model()
