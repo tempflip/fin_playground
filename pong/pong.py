@@ -12,6 +12,12 @@ class World:
 		self.obstacle_list = []
 		self.ball_list = []
 
+		#the state
+		self.state = {
+			'score': 0,
+			'penalty' : 0,
+			'structure' : []
+		}
 	def add_obstacles(self, obst_list):
 		for obstacle in obst_list:
 			obstacle.set_world(self)
@@ -25,7 +31,17 @@ class World:
 	def next_step(self):
 		for ball in self.ball_list:
 			ball.move()
+		self.update_state()
 
+	def update_state(self):
+		for ball in self.ball_list:
+			self.state['score'] = self.state['score'] + ball.score
+			self.state['penalty'] = self.state['penalty'] + ball.penalty
+		
+		self.state['structure'] = []
+		self.state['structure'].append(self.ball_list[0].y);
+		for obstacle in self.obstacle_list:
+			self.state['structure'].append(obstacle.y)
 
 class Obstacle:
 	def __init__(self, x, y, w, h):
@@ -43,13 +59,8 @@ class Obstacle:
 		pygame.draw.rect(surface, color, (self.x * SCALING, self.y * SCALING, self.w * SCALING, self.h * SCALING), 1)
 
 	def is_touching(self, x, y):
-
 		x_touch = x >= self.x and x < (self.x + self.w)
 		y_touch = y >= self.y and y < (self.y + self.h)
-
-		if (x_touch == True and y_touch == True):
-			print ':', x, y
-
 		return x_touch and y_touch 
 
 	def set_score(self, v):
@@ -63,8 +74,10 @@ class Obstacle:
 
 
 class Bat(Obstacle):
-	def __init__(self, x, y):
-		Obstacle.__init__(self, x, y, 1, 10)
+	def __init__(self, x, y, w, h):
+		Obstacle.__init__(self, x, y, w, h)
+		self.actions = [self.down, self.up]
+
 
 	def down(self):
 		collision = False
@@ -113,8 +126,6 @@ class Ball:
 				self.bounce_y(obst)
 				self.udate_score(obst)
 
-		#print ("ball:", self.x, self.y)
-
 		self.x = self.x + self.speed_vector[0]
 		self.y = self.y + self.speed_vector[1]
 
@@ -135,31 +146,45 @@ class Ball:
 def draw_score(score, penalty, surface, color):
 	font = pygame.font.Font(None, 30)
 	text = font.render("{} / {}".format(score, penalty), 1, color)
-	surface.blit(text, (400, 100))
+	surface.blit(text, (10, 10))
+
+def record_action(l, prev_state, action, current_state):
+	pr = tuple(prev_state['structure'])
+	curr = tuple(current_state['structure'])
+	if pr not in l:
+		l[pr] = {}
+	if action not in l[pr]:
+		l[pr][action] = []
+
+	l[pr][action].append(curr)
+
+
+	return l
 
 def main():
 	background_color = (250, 250, 250)
 	obst_color = (250,1,1)
 
 	## settint up the world
-	space = [60, 60]
+	space = [20, 20]
 
 	world = World(space)
 
-	bat = Bat(5, 10)
+	bat = Bat(1, 2, 1, 4)
+	border_up =Border (0, 0, 20, 1)
+	border_down = Border(0, 19, 20, 1)
+	border_left =Border (0, 0, 1, 20)
+	border_right = Border (19, 0, 1, 20)
+	#border_right.set_score(1)
+	#center = Border(30, 15, 1, 20)
+
 	bat.set_score(2)
-
-	border_up =Border (0, 0, 60, 1)
-	border_down = Border(0, 59, 60, 1)
-	border_left =Border (0, 0, 1, 60)
 	border_left.set_penalty(2)
-	border_right = Border (59, 0, 1, 60)
-	border_right.set_score(1)
-	center = Border(30, 15, 1, 20)
 
-	ball = Ball((10, 15), (1,1))
 
-	world.add_obstacles([bat, border_up, border_down, border_left, border_right, center])
+	ball = Ball((13, 5), (1,1))
+
+	world.add_obstacles([bat, border_up, border_down, border_left, border_right])
 	world.add_balls([ball])
 
 	## setting up the visualisation
@@ -175,7 +200,7 @@ def main():
 	border_down.draw(background, obst_color)
 	border_left.draw(background, obst_color)
 	border_right.draw(background, obst_color)
-	center.draw(background, obst_color)
+	#center.draw(background, obst_color)
 
 	# Display some text
 	font = pygame.font.Font(None, 36)
@@ -189,16 +214,20 @@ def main():
 	screen.blit(background, (0, 0))
 	pygame.display.flip()
 
-
+	l = {}
 
 	# Event loop
 	while 1:
 		frame_start = time.time()
+		actions = [bat.down, bat.up]
 
 		## clean up
 		bat.draw(background, background_color )
 		ball.draw(background, background_color )
 		draw_score(ball.score, ball.penalty, background, background_color)
+
+		## save the previous state
+		prev_state = world.state
 
 		## events
 		for event in pygame.event.get():
@@ -208,21 +237,28 @@ def main():
 
 		keys = pygame.key.get_pressed()
 
+
+		## do some action
+		selected_action = -1
 		if (keys[K_DOWN]): 
-			bat.down()
-
+			selected_action = 0
 		if (keys[K_UP]):
-			bat.up()
+			selected_action = 1
 
+		if selected_action != -1:
+			actions[selected_action]()
 		## do the stuff
-		ball.move()
+		world.next_step()
+
+		## save the state, the action and the state
+		l = record_action(l, prev_state, selected_action, world.state)
+		print l
 
 		## draw
 		bat.draw(background, (44, 44, 44) )
 		ball.draw(background, (99, 99, 99) )
 
 		draw_score(ball.score, ball.penalty, background, obst_color)
-
 
 		screen.blit(background, (0, 0))
 		pygame.display.flip()
